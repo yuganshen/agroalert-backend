@@ -51,3 +51,6 @@ target/
 
 # Node modules (frontend React)
 node_modules/
+
+# Local AI Agent instructions
+AGENTS.md
