@@ -10,6 +10,8 @@ import java.util.List;
 @Repository
 public interface ParcelaRepository extends JpaRepository<Parcela, Long> {
 
+    List<Parcela> findByActivaTrue();
+
     List<Parcela> findByAgricultorIdAndActivaTrue(Long agricultorId);
 
     List<Parcela> findByComunidadIdAndActivaTrue(Long comunidadId);
