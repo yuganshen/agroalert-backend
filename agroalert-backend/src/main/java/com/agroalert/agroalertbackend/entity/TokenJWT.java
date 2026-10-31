@@ -21,7 +21,7 @@ public class TokenJWT {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 2048)
     private String token;
 
     @Column(name = "emitido_en")

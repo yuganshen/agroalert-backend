@@ -19,4 +19,8 @@ public class UsuarioResponseDto {
     private String email;
     private Boolean activo;
     private List<String> roles;
+    private String dni;
+    private String telefono;
+    private String codigoProfesional;
+    private String especialidad;
 }

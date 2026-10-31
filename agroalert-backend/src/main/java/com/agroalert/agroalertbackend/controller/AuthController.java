@@ -3,10 +3,15 @@ package com.agroalert.agroalertbackend.controller;
 
 import com.agroalert.agroalertbackend.dto.ApiResponse;
 import com.agroalert.agroalertbackend.dto.AuthResponse;
+import com.agroalert.agroalertbackend.dto.CrearRegistroUsuarioDto;
 import com.agroalert.agroalertbackend.dto.LoginRequest;
+import com.agroalert.agroalertbackend.dto.UsuarioResponseDto;
+import com.agroalert.agroalertbackend.entity.enums.RolNombre;
 import com.agroalert.agroalertbackend.service.AuthService;
+import com.agroalert.agroalertbackend.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,11 +21,20 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final UsuarioService usuarioService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.ok("Inicio de sesión exitoso", response));
+    }
+
+    @PostMapping("/registro")
+    public ResponseEntity<ApiResponse<UsuarioResponseDto>> registrarAgricultor(@Valid @RequestBody CrearRegistroUsuarioDto dto) {
+        dto.setRol(RolNombre.AGRICULTOR);
+        UsuarioResponseDto usuarioCreado = usuarioService.crearUsuario(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Agricultor registrado exitosamente", usuarioCreado));
     }
 
     @PostMapping("/logout")
