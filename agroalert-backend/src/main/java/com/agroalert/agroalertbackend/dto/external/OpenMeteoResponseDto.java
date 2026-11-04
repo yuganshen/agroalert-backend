@@ -64,21 +64,21 @@ public class OpenMeteoResponseDto {
         if (currentWeather != null && currentWeather.getTemperature() != null) {
             return currentWeather.getTemperature();
         }
-        return 0.0;
+        return null;
     }
 
     public Double resolverPrecipitacion() {
         if (current != null && current.getPrecipitation() != null) {
             return current.getPrecipitation();
         }
-        return 0.0;
+        return null;
     }
 
     public Double resolverHumedadRelativa() {
         if (current != null && current.getRelativeHumidity2m() != null) {
             return current.getRelativeHumidity2m();
         }
-        return 60.0; // Valor típico si no está reportado en current_weather básico
+        return null;
     }
 
     public Double resolverVelocidadViento() {
@@ -88,6 +88,6 @@ public class OpenMeteoResponseDto {
         if (currentWeather != null && currentWeather.getWindspeed() != null) {
             return currentWeather.getWindspeed();
         }
-        return 0.0;
+        return null;
     }
 }

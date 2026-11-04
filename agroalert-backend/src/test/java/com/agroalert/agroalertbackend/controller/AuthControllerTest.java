@@ -107,7 +107,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(registroDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Agricultor registrado exitosamente"))
+                .andExpect(jsonPath("$.message").value("Usuario registrado exitosamente"))
                 .andExpect(jsonPath("$.data.id").value(5))
                 .andExpect(jsonPath("$.data.nombre").value("Carlos"))
                 .andExpect(jsonPath("$.data.roles[0]").value("AGRICULTOR"))
@@ -148,5 +148,24 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value("Cierre de sesión exitoso"));
 
         verify(authService, times(1)).logout("Bearer mocked-jwt-token");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = RolNombre.class, names = {"TECNICO", "ADMINISTRADOR"})
+    void registroPublicoRechazaPrivilegios(RolNombre rol) throws Exception {
+        var dto = CrearRegistroUsuarioDto.builder().nombre("Dato de ejemplo").apellido("Prueba")
+                .email("prueba@example.test").password("Prueba123!").rol(rol).build();
+        mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto))).andExpect(status().isForbidden());
+        verifyNoInteractions(usuarioService);
+    }
+
+    @Test
+    void loginDesactivadoDevuelveErrorControlado() throws Exception {
+        when(authService.login(any())).thenThrow(new org.springframework.security.authentication.DisabledException("disabled"));
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"prueba@example.test\",\"password\":\"Prueba123!\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("La cuenta está desactivada. Contacte al administrador."));
     }
 }

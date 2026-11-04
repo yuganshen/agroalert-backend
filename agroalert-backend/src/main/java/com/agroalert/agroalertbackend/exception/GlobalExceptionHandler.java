@@ -18,6 +18,21 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+    public ResponseEntity<ErrorResponse> handleDisabledAccount(Exception ex, HttpServletRequest request) {
+        return ResponseEntity.status(401).body(ErrorResponse.builder().timestamp(LocalDateTime.now())
+                .status(401).error("Unauthorized").message("La cuenta está desactivada. Contacte al administrador.")
+                .path(request.getRequestURI()).build());
+    }
+
+    @ExceptionHandler(org.springframework.web.client.RestClientException.class)
+    public ResponseEntity<ErrorResponse> handleWeatherProvider(Exception ex, HttpServletRequest request) {
+        log.warn("Proveedor externo no disponible: {}", ex.getMessage());
+        return ResponseEntity.status(502).body(ErrorResponse.builder().timestamp(LocalDateTime.now())
+                .status(502).error("Bad Gateway").message("No fue posible obtener datos del proveedor climático. Intente nuevamente.")
+                .path(request.getRequestURI()).build());
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
             ResourceNotFoundException ex, HttpServletRequest request) {

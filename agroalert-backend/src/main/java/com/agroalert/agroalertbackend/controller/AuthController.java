@@ -31,8 +31,8 @@ public class AuthController {
 
     @PostMapping("/registro")
     public ResponseEntity<ApiResponse<UsuarioResponseDto>> registrarUsuario(@Valid @RequestBody CrearRegistroUsuarioDto dto) {
-        if (dto.getRol() == null) {
-            dto.setRol(RolNombre.AGRICULTOR);
+        if (dto.getRol() != RolNombre.AGRICULTOR) {
+            throw new org.springframework.security.access.AccessDeniedException("El registro público solo admite agricultores");
         }
         UsuarioResponseDto usuarioCreado = usuarioService.crearUsuario(dto);
         return ResponseEntity.status(HttpStatus.CREATED)

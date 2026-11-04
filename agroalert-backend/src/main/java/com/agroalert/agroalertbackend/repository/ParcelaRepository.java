@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface ParcelaRepository extends JpaRepository<Parcela, Long> {
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "comunidad")
     List<Parcela> findByActivaTrue();
 
     List<Parcela> findByAgricultorIdAndActivaTrue(Long agricultorId);

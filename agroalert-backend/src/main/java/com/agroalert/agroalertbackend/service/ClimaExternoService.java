@@ -27,7 +27,7 @@ public class ClimaExternoService {
         }
 
         String url = String.format(Locale.US,
-                "https://api.open-meteo.com/v1/forecast?latitude=%.6f&longitude=%.6f&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&current_weather=true",
+                "https://api.open-meteo.com/v1/forecast?latitude=%.6f&longitude=%.6f&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&timezone=America/Lima",
                 latitud, longitud);
 
         log.info("Consultando clima externo en Open-Meteo: lat={}, lon={}", latitud, longitud);
@@ -44,11 +44,22 @@ public class ClimaExternoService {
             Double humedad = response.resolverHumedadRelativa();
             Double viento = response.resolverVelocidadViento();
 
+            if (response.getCurrent() == null || temp == null || precip == null || humedad == null || viento == null
+                    || !Double.isFinite(temp) || !Double.isFinite(precip) || !Double.isFinite(humedad) || !Double.isFinite(viento)) {
+                throw new RestClientException("El proveedor devolvió datos meteorológicos incompletos");
+            }
+            LocalDateTime observadoEn;
+            try {
+                observadoEn = LocalDateTime.parse(response.getCurrent().getTime());
+            } catch (java.time.format.DateTimeParseException | NullPointerException ex) {
+                throw new RestClientException("El proveedor no devolvió una hora de observación válida", ex);
+            }
+
             log.info("Datos obtenidos de Open-Meteo: Temp={}°C, Precip={}mm, Humedad={}% , Viento={}km/h",
                     temp, precip, humedad, viento);
 
             return DatoMeteorologicoRequestDto.builder()
-                    .fechaHora(LocalDateTime.now())
+                    .fechaHora(observadoEn)
                     .temperatura(temp)
                     .precipitacion(precip)
                     .humedadRelativa(humedad)

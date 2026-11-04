@@ -66,8 +66,12 @@ class ClimaExternoServiceTest {
         assertEquals(14.5, resultado.getVelocidadViento());
         assertEquals(TipoDato.ACTUAL, resultado.getTipoDato());
         assertEquals("Open-Meteo", resultado.getFuente());
+        assertEquals(java.time.LocalDateTime.parse("2026-10-21T18:00"), resultado.getFechaHora());
 
         verify(restTemplate, times(1)).getForObject(anyString(), eq(OpenMeteoResponseDto.class));
+        verify(restTemplate).getForObject(org.mockito.ArgumentMatchers.argThat((String url) ->
+                url.contains("&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m")
+                        && url.contains("timezone=America/Lima") && !url.contains("current_weather")), eq(OpenMeteoResponseDto.class));
     }
 
     @Test
@@ -96,5 +100,36 @@ class ClimaExternoServiceTest {
 
         assertThrows(RestClientException.class, () -> climaExternoService.consultarClimaActual(-16.62, -72.71));
         verify(restTemplate, times(1)).getForObject(anyString(), eq(OpenMeteoResponseDto.class));
+    }
+
+    @Test
+    void rechazaDatosParcialesSinInventarHumedad() {
+        openMeteoResponseDto.getCurrent().setRelativeHumidity2m(null);
+        when(restTemplate.getForObject(anyString(), eq(OpenMeteoResponseDto.class))).thenReturn(openMeteoResponseDto);
+        assertNull(openMeteoResponseDto.resolverHumedadRelativa());
+        assertThrows(RestClientException.class, () -> climaExternoService.consultarClimaActual(-16.6, -72.7));
+    }
+
+    @Test
+    void rechazaRespuestaLegacySinVariablesSolicitadas() {
+        openMeteoResponseDto.setCurrent(null);
+        when(restTemplate.getForObject(anyString(), eq(OpenMeteoResponseDto.class))).thenReturn(openMeteoResponseDto);
+        assertNull(openMeteoResponseDto.resolverPrecipitacion());
+        assertThrows(RestClientException.class, () -> climaExternoService.consultarClimaActual(-16.6, -72.7));
+    }
+
+    @Test
+    void rechazaHoraInvalida() {
+        openMeteoResponseDto.getCurrent().setTime("hora inválida");
+        when(restTemplate.getForObject(anyString(), eq(OpenMeteoResponseDto.class))).thenReturn(openMeteoResponseDto);
+        assertThrows(RestClientException.class, () -> climaExternoService.consultarClimaActual(-16.6, -72.7));
+    }
+
+    @Test
+    void ceroEsUnaMedicionValida() {
+        openMeteoResponseDto.getCurrent().setPrecipitation(0d);
+        openMeteoResponseDto.getCurrent().setRelativeHumidity2m(0d);
+        when(restTemplate.getForObject(anyString(), eq(OpenMeteoResponseDto.class))).thenReturn(openMeteoResponseDto);
+        assertEquals(0d, climaExternoService.consultarClimaActual(-16.6, -72.7).getHumedadRelativa());
     }
 }
