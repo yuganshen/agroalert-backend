@@ -50,13 +50,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            UserDetails userDetails;
+            try { userDetails = this.userDetailsService.loadUserByUsername(userEmail); }
+            catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
+                filterChain.doFilter(request, response); return;
+            }
 
             boolean isTokenNotRevoked = tokenJwtRepository.findByToken(jwt)
                     .map(token -> !Boolean.TRUE.equals(token.getRevocado()))
-                    .orElse(true);
+                    .orElse(false);
 
-            if (jwtService.isTokenValid(jwt, userDetails) && isTokenNotRevoked) {
+            if (userDetails.isEnabled() && jwtService.isTokenValid(jwt, userDetails) && isTokenNotRevoked) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,

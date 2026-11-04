@@ -71,6 +71,9 @@ public class AuthService {
                 .toList();
 
         return AuthResponse.builder()
+                .id(usuario.getId())
+                .nombre(usuario.getNombre())
+                .apellido(usuario.getApellido())
                 .token(token)
                 .type("Bearer")
                 .email(usuario.getEmail())

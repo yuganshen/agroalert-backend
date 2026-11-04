@@ -21,6 +21,7 @@ public class EtapaFenologicaService {
     public List<EtapaFenologicaDto> listarEtapas() {
         return etapaFenologicaRepository.findAll()
                 .stream()
+                .filter(e -> !Boolean.FALSE.equals(e.getActivo()) && e.getEstado()==com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO)
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }

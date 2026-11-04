@@ -12,6 +12,6 @@ import java.util.Optional;
 @Repository
 public interface EtapaFenologicaRepository extends JpaRepository<EtapaFenologica, Long> {
 
-    @Query("SELECT e FROM EtapaFenologica e WHERE :dias >= e.diasDesdeMin AND :dias <= e.diasDesdeMax")
+    @Query("SELECT e FROM EtapaFenologica e WHERE (e.activo = true OR e.activo IS NULL) AND e.estado = com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO AND :dias >= e.diasDesdeMin AND :dias <= e.diasDesdeMax")
     Optional<EtapaFenologica> findEtapaPorDias(@Param("dias") Integer dias);
 }

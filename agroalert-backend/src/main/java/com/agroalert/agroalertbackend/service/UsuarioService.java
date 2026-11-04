@@ -29,6 +29,40 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final jakarta.persistence.EntityManager entityManager;
+    private final com.agroalert.agroalertbackend.repository.TokenJwtRepository tokens;
+
+    @Transactional
+    public UsuarioResponseDto actualizar(Long id, com.agroalert.agroalertbackend.dto.ActualizarUsuarioDto d) {
+        Usuario u=usuarioRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        usuarioRepository.findByEmail(d.getEmail()).ifPresent(other -> { if(!other.getId().equals(id)) throw new ValidationException("El correo ya está registrado"); });
+        var auth=org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if(auth!=null && auth.getName().equals(u.getEmail()) && !d.getRol().name().equals("ADMINISTRADOR")) throw new ValidationException("No puede quitarse su propio rol de administrador");
+        String actual=u instanceof Agricultor ? "AGRICULTOR" : u instanceof TecnicoAgricola ? "TECNICO" : "ADMINISTRADOR";
+        if(!actual.equals(d.getRol().name()) && u instanceof Agricultor) {
+            Long parcelas=entityManager.createQuery("select count(p) from Parcela p where p.agricultor.id=:id",Long.class).setParameter("id",id).getSingleResult();
+            if(parcelas>0) throw new ValidationException("Este agricultor tiene parcelas asociadas; conserve su rol para mantener el historial");
+        }
+        u.setNombre(d.getNombre());u.setApellido(d.getApellido());u.setEmail(d.getEmail());
+        var rol=rolRepository.findByNombre(d.getRol()).orElseGet(() -> rolRepository.save(Rol.builder().nombre(d.getRol()).build()));
+        u.setRoles(new java.util.HashSet<>(Set.of(rol)));
+        if(u instanceof Agricultor a) { a.setDni(d.getDni());a.setTelefono(d.getTelefono()); }
+        if(u instanceof TecnicoAgricola t) { t.setCodigoProfesional(d.getCodigoProfesional());t.setEspecialidad(d.getEspecialidad()); }
+        usuarioRepository.saveAndFlush(u);
+        if(!actual.equals(d.getRol().name())) {
+            String tabla=actual.equals("AGRICULTOR") ? "agricultor" : actual.equals("TECNICO") ? "tecnico_agricola" : "administrador";
+            entityManager.createNativeQuery("delete from "+tabla+" where id=:id").setParameter("id",id).executeUpdate();
+            switch(d.getRol()) {
+                case AGRICULTOR -> entityManager.createNativeQuery("insert into agricultor (id,dni,telefono) values (:id,:dni,:tel)").setParameter("id",id).setParameter("dni",d.getDni()).setParameter("tel",d.getTelefono()).executeUpdate();
+                case TECNICO -> entityManager.createNativeQuery("insert into tecnico_agricola (id,codigo_profesional,especialidad) values (:id,:codigo,:esp)").setParameter("id",id).setParameter("codigo",d.getCodigoProfesional()).setParameter("esp",d.getEspecialidad()).executeUpdate();
+                case ADMINISTRADOR -> entityManager.createNativeQuery("insert into administrador (id) values (:id)").setParameter("id",id).executeUpdate();
+            }
+        }
+        var activos=tokens.findByUsuarioIdAndRevocadoFalse(id); activos.forEach(t -> t.setRevocado(true));tokens.saveAll(activos);
+        entityManager.flush(); entityManager.clear();
+        return mapToResponseDto(usuarioRepository.findById(id).orElseThrow());
+    }
+
 
     @Transactional(readOnly = true)
     public List<UsuarioResponseDto> listarUsuarios() {
@@ -43,7 +77,10 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
 
+        var auth=org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if(auth!=null && auth.getName().equals(usuario.getEmail())) throw new ValidationException("No puede desactivar su propia cuenta");
         Boolean nuevoEstado = !Boolean.TRUE.equals(usuario.getActivo());
+        if(!nuevoEstado) { var activos=tokens.findByUsuarioIdAndRevocadoFalse(id); activos.forEach(t -> t.setRevocado(true)); tokens.saveAll(activos); }
         usuario.setActivo(nuevoEstado);
         Usuario usuarioActualizado = usuarioRepository.save(usuario);
 

@@ -170,11 +170,13 @@ class ReglaDecisionServiceTest {
     @Test
     void testEliminarRegla_Exitoso() {
         when(reglaDecisionRepository.existsById(10L)).thenReturn(true);
-        doNothing().when(reglaDecisionRepository).deleteById(10L);
+        when(reglaDecisionRepository.findById(10L)).thenReturn(Optional.of(regla));
 
         reglaDecisionService.eliminarRegla(10L);
 
-        verify(reglaDecisionRepository, times(1)).deleteById(10L);
+        verify(reglaDecisionRepository).save(regla);
+        assertFalse(regla.getActivo());
+        verify(reglaDecisionRepository, never()).deleteById(any());
     }
 
     @Test

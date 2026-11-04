@@ -26,4 +26,6 @@ public class AlertaResponseDto {
     private String medidaNombre;
     private String recomendacionTexto;
     private String procedimientoTitulo;
+    private String momentoAplicacion;
+    private java.util.List<String> pasos;
 }

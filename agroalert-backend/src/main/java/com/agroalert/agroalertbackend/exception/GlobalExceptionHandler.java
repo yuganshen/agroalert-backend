@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+@lombok.extern.slf4j.Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -99,14 +100,30 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<ErrorResponse> handleInvalidFormat(Exception ex, HttpServletRequest request) {
+        return ResponseEntity.badRequest().body(ErrorResponse.builder().timestamp(LocalDateTime.now()).status(400)
+                .error("Bad Request").message("Revise el formato de los datos y los valores seleccionados")
+                .path(request.getRequestURI()).build());
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(Exception ex, HttpServletRequest request) {
+        return ResponseEntity.status(409).body(ErrorResponse.builder().timestamp(LocalDateTime.now()).status(409)
+                .error("Conflict").message("El registro tiene datos duplicados o referencias que impiden la operación")
+                .path(request.getRequestURI()).build());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, HttpServletRequest request) {
+        log.error("Error procesando {} {}",request.getMethod(),request.getRequestURI(),ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message(ex.getMessage() != null ? ex.getMessage() : "Error interno del servidor")
+                .message("No se pudo completar la operación. Intente nuevamente o contacte al administrador")
                 .path(request.getRequestURI())
                 .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);

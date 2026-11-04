@@ -22,7 +22,7 @@ public class ParcelaController {
     private final ParcelaService parcelaService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('AGRICULTOR', 'ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('AGRICULTOR', 'ADMINISTRADOR') and @acceso.agricultor(#dto.agricultorId)")
     public ResponseEntity<ApiResponse<ParcelaResponseDto>> registrarParcela(@Valid @RequestBody ParcelaRequestDto dto) {
         ParcelaResponseDto parcelaCreada = parcelaService.registrarParcela(dto);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -30,19 +30,21 @@ public class ParcelaController {
     }
 
     @GetMapping("/agricultor/{agricultorId}")
+    @PreAuthorize("@acceso.agricultor(#agricultorId)")
     public ResponseEntity<ApiResponse<List<ParcelaResponseDto>>> listarParcelasPorAgricultor(@PathVariable Long agricultorId) {
         List<ParcelaResponseDto> parcelas = parcelaService.listarParcelasPorAgricultor(agricultorId);
         return ResponseEntity.ok(ApiResponse.ok("Parcelas del agricultor obtenidas exitosamente", parcelas));
     }
 
     @GetMapping("/comunidad/{comunidadId}")
+    @PreAuthorize("hasAnyRole('TECNICO','ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<List<ParcelaResponseDto>>> listarParcelasPorComunidad(@PathVariable Long comunidadId) {
         List<ParcelaResponseDto> parcelas = parcelaService.listarParcelasPorComunidad(comunidadId);
         return ResponseEntity.ok(ApiResponse.ok("Parcelas de la comunidad obtenidas exitosamente", parcelas));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('AGRICULTOR', 'ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('AGRICULTOR', 'ADMINISTRADOR') and @acceso.parcela(#id) and @acceso.agricultor(#dto.agricultorId)")
     public ResponseEntity<ApiResponse<ParcelaResponseDto>> actualizarParcela(
             @PathVariable Long id,
             @Valid @RequestBody ParcelaRequestDto dto) {
@@ -51,7 +53,7 @@ public class ParcelaController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('AGRICULTOR', 'ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('AGRICULTOR', 'ADMINISTRADOR') and @acceso.parcela(#id)")
     public ResponseEntity<ApiResponse<Void>> desactivarParcela(@PathVariable Long id) {
         parcelaService.desactivarParcela(id);
         return ResponseEntity.ok(ApiResponse.ok("Parcela desactivada exitosamente"));

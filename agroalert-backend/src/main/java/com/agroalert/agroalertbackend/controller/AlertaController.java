@@ -7,6 +7,7 @@ import com.agroalert.agroalertbackend.dto.CambiarEstadoAlertaDto;
 import com.agroalert.agroalertbackend.entity.enums.EstadoAlerta;
 import com.agroalert.agroalertbackend.service.AlertaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,7 @@ public class AlertaController {
     private final AlertaService alertaService;
 
     @PostMapping("/evaluar/parcela/{parcelaId}")
+    @PreAuthorize("hasAnyRole('TECNICO','ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<List<AlertaResponseDto>>> evaluarClimaYGenerarAlerta(
             @PathVariable Long parcelaId) {
         List<AlertaResponseDto> alertas = alertaService.evaluarClimaYGenerarAlerta(parcelaId);
@@ -30,6 +32,7 @@ public class AlertaController {
     }
 
     @GetMapping("/parcela/{parcelaId}")
+    @PreAuthorize("@acceso.parcela(#parcelaId)")
     public ResponseEntity<ApiResponse<List<AlertaResponseDto>>> listarAlertasPorParcela(
             @PathVariable Long parcelaId) {
         List<AlertaResponseDto> alertas = alertaService.listarAlertasPorParcela(parcelaId);
@@ -37,6 +40,7 @@ public class AlertaController {
     }
 
     @PatchMapping("/{id}/estado")
+    @PreAuthorize("@acceso.alerta(#id)")
     public ResponseEntity<ApiResponse<AlertaResponseDto>> cambiarEstadoAlerta(
             @PathVariable Long id,
             @RequestParam(required = false) EstadoAlerta estado,

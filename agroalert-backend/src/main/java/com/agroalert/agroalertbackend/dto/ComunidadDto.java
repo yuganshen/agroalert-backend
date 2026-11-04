@@ -24,8 +24,12 @@ public class ComunidadDto {
     private String provincia;
 
     @NotNull(message = "La latitud es requerida")
+    @jakarta.validation.constraints.DecimalMin("-90")
+    @jakarta.validation.constraints.DecimalMax("90")
     private Double latitud;
 
     @NotNull(message = "La longitud es requerida")
+    @jakarta.validation.constraints.DecimalMin("-180")
+    @jakarta.validation.constraints.DecimalMax("180")
     private Double longitud;
 }

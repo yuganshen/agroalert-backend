@@ -5,13 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
-@TestPropertySource(properties = {
-        "spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:123456}"
-})
+@org.springframework.test.context.ActiveProfiles("test")
 class AgroalertBackendApplicationTests {
-
-    @Test
-    void contextLoads() {
-    }
-
+    @Test void contextLoads() { }
 }

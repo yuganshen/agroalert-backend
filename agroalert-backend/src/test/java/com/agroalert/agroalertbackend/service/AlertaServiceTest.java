@@ -50,6 +50,8 @@ class AlertaServiceTest {
     @Mock
     private ProcedimientoRepository procedimientoRepository;
 
+    @Mock private PasoProcedimientoRepository pasoProcedimientoRepository;
+
     @InjectMocks
     private AlertaService alertaService;
 
@@ -122,6 +124,13 @@ class AlertaServiceTest {
                 .medida(medida)
                 .build();
 
+        // Datos de ejemplo exclusivamente para verificar el motor, no recomendaciones reales.
+        etapa.setEstado(com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO);
+        riesgo.setEstado(com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO);
+        regla.setEstado(com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO);
+        medida.setEstado(com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO);
+        recomendacion.setEstado(com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO);
+        procedimiento.setEstado(com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO);
         alerta = Alerta.builder()
                 .id(100L)
                 .parcela(parcela)
@@ -166,6 +175,17 @@ class AlertaServiceTest {
         assertEquals("Protocolo de control de Pyricularia", resAlerta.getProcedimientoTitulo());
 
         verify(alertaRepository, times(1)).save(any(Alerta.class));
+    }
+
+    @Test
+    void noGeneraAlertasConReglasPendientes() {
+        regla.setEstado(com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.PENDIENTE);
+        when(parcelaRepository.findById(1L)).thenReturn(Optional.of(parcela));
+        when(datoMeteorologicoRepository.findTopByParcelaIdOrderByFechaHoraDesc(1L)).thenReturn(Optional.of(datoMeteorologico));
+        when(etapaFenologicaRepository.findEtapaPorDias(30)).thenReturn(Optional.of(etapa));
+        when(reglaDecisionRepository.findByEtapaFenologicaId(2L)).thenReturn(List.of(regla));
+        assertTrue(alertaService.evaluarClimaYGenerarAlerta(1L).isEmpty());
+        verify(alertaRepository,never()).save(any());
     }
 
     @Test

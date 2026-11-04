@@ -99,6 +99,13 @@ public class ParcelaService {
         parcelaRepository.save(parcela);
     }
 
+    private Double progreso(LocalDate fecha) {
+        if (fecha == null) return null;
+        int dias = (int) ChronoUnit.DAYS.between(fecha, LocalDate.now());
+        return etapaFenologicaRepository.findEtapaPorDias(dias)
+            .map(e -> Math.max(0d, Math.min(100d, 100d * (dias - e.getDiasDesdeMin()) / Math.max(1, e.getDiasDesdeMax() - e.getDiasDesdeMin())))).orElse(null);
+    }
+
     private String determinarEtapaFenologica(LocalDate fechaSiembra) {
         if (fechaSiembra == null) {
             return null;
@@ -121,6 +128,9 @@ public class ParcelaService {
 
         return ParcelaResponseDto.builder()
                 .id(parcela.getId())
+                .comunidadId(parcela.getComunidad() == null ? null : parcela.getComunidad().getId())
+                .agricultorId(parcela.getAgricultor() == null ? null : parcela.getAgricultor().getId())
+                .progresoEtapa(progreso(parcela.getFechaSiembra()))
                 .nombre(parcela.getNombre())
                 .ubicacion(parcela.getUbicacion())
                 .areaHectareas(parcela.getAreaHectareas())

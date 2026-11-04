@@ -30,6 +30,7 @@ public class AlertaService {
     private final MedidaRepository medidaRepository;
     private final RecomendacionRepository recomendacionRepository;
     private final ProcedimientoRepository procedimientoRepository;
+    private final PasoProcedimientoRepository pasoProcedimientoRepository;
 
     @Transactional
     public List<AlertaResponseDto> evaluarClimaYGenerarAlerta(Long parcelaId) {
@@ -50,13 +51,15 @@ public class AlertaService {
 
         List<Alerta> alertasGeneradas = new ArrayList<>();
         for (ReglaDecision regla : reglasVigentes) {
+            if (Boolean.FALSE.equals(regla.getActivo()) || regla.getEstado()!=com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO || regla.getRiesgo()==null || Boolean.FALSE.equals(regla.getRiesgo().getActivo()) || regla.getRiesgo().getEstado()!=com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO) continue;
+            if (alertaRepository.existsByParcelaIdAndReglaDecisionIdAndEstado(parcelaId, regla.getId(), EstadoAlerta.ACTIVA)) continue;
             Double valorActual = obtenerValorVariable(ultimoDato, regla.getVariableMeteorologica());
             if (evaluarCondicion(valorActual, regla.getOperador(), regla.getUmbral())) {
                 Medida medidaPreventiva = null;
                 if (regla.getRiesgo() != null) {
                     List<Medida> medidas = medidaRepository.findByRiesgoId(regla.getRiesgo().getId());
                     if (!medidas.isEmpty()) {
-                        medidaPreventiva = medidas.get(0);
+                        medidaPreventiva = medidas.stream().filter(m -> !Boolean.FALSE.equals(m.getActivo()) && m.getEstado()==com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO).findFirst().orElse(null);
                     }
                 }
 
@@ -110,6 +113,14 @@ public class AlertaService {
         return mapToResponseDto(guardada);
     }
 
+    @Transactional(readOnly=true)
+    public AlertaResponseDto obtener(Long id) {
+        return mapToResponseDto(alertaRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Alerta no encontrada")));
+    }
+    @Transactional(readOnly=true)
+    public List<AlertaResponseDto> propias(Long usuarioId) {
+        return alertaRepository.findByParcelaAgricultorIdOrderByGeneradaEnDesc(usuarioId).stream().map(this::mapToResponseDto).toList();
+    }
     private Double obtenerValorVariable(DatoMeteorologico dato, String variable) {
         if (variable == null) return null;
         String normalizada = variable.toLowerCase().trim()
@@ -144,19 +155,25 @@ public class AlertaService {
         Long parcelaId = alerta.getParcela() != null ? alerta.getParcela().getId() : null;
         String parcelaNombre = alerta.getParcela() != null ? alerta.getParcela().getNombre() : null;
         String riesgoNombre = alerta.getRiesgo() != null ? alerta.getRiesgo().getNombre() : null;
-        String medidaNombre = alerta.getMedida() != null ? alerta.getMedida().getNombre() : null;
+        String medidaNombre = alerta.getMedida() != null && !Boolean.FALSE.equals(alerta.getMedida().getActivo()) && alerta.getMedida().getEstado()==com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO ? alerta.getMedida().getNombre() : null;
 
         String recomendacionTexto = null;
         String procedimientoTitulo = null;
+        String momentoAplicacion = null;
+        List<String> pasos = List.of();
 
-        if (alerta.getMedida() != null) {
+        if (alerta.getMedida() != null && !Boolean.FALSE.equals(alerta.getMedida().getActivo()) && alerta.getMedida().getEstado()==com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO) {
             recomendacionTexto = recomendacionRepository.findByMedidaId(alerta.getMedida().getId())
+                    .filter(r -> !Boolean.FALSE.equals(r.getActivo()) && r.getEstado()==com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO)
                     .map(Recomendacion::getTexto)
                     .orElse(null);
 
-            procedimientoTitulo = procedimientoRepository.findByMedidaId(alerta.getMedida().getId())
-                    .map(Procedimiento::getTitulo)
-                    .orElse(null);
+            Procedimiento procedimiento = procedimientoRepository.findByMedidaId(alerta.getMedida().getId())
+                    .filter(p -> !Boolean.FALSE.equals(p.getActivo()) && p.getEstado()==com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO).orElse(null);
+            if(procedimiento!=null) {
+                procedimientoTitulo=procedimiento.getTitulo(); momentoAplicacion=procedimiento.getMomentoAplicacion();
+                pasos=pasoProcedimientoRepository.findByProcedimientoIdOrderByOrdenAsc(procedimiento.getId()).stream().map(PasoProcedimiento::getDescripcion).toList();
+            }
         }
 
         return AlertaResponseDto.builder()
@@ -171,6 +188,8 @@ public class AlertaService {
                 .medidaNombre(medidaNombre)
                 .recomendacionTexto(recomendacionTexto)
                 .procedimientoTitulo(procedimientoTitulo)
+                .momentoAplicacion(momentoAplicacion)
+                .pasos(pasos)
                 .build();
     }
 }

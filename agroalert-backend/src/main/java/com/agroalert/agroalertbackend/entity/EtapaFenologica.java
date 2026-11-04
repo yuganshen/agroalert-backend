@@ -20,6 +20,11 @@ public class EtapaFenologica {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Builder.Default
+    private Boolean activo = true;
+
+    private String comentarioValidacion;
+
     private String nombre;
 
     private String descripcion;

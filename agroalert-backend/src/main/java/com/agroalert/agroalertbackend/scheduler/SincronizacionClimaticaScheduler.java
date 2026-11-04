@@ -24,6 +24,8 @@ import java.util.List;
 @Slf4j
 public class SincronizacionClimaticaScheduler {
 
+    private volatile SincronizacionResultadoDto ultimoResultado;
+    public SincronizacionResultadoDto getUltimoResultado() { return ultimoResultado; }
     private final ParcelaRepository parcelaRepository;
     private final ClimaExternoService climaExternoService;
     private final DatoMeteorologicoService datoMeteorologicoService;
@@ -94,6 +96,7 @@ public class SincronizacionClimaticaScheduler {
         log.info("Tarea de sincronización finalizada: {} procesadas, {} exitosas, {} con error, {} alertas generadas.",
                 totalProcesadas, sincronizadasExitosas, parcelasConError, totalAlertasGeneradas);
 
+        ultimoResultado = resultado;
         return resultado;
     }
 }

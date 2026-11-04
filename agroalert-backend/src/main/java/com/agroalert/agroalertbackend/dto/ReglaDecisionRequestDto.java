@@ -24,6 +24,7 @@ public class ReglaDecisionRequestDto {
     @NotNull(message = "El umbral es obligatorio")
     private Double umbral;
 
+    @NotBlank(message = "La fuente técnica es obligatoria")
     private String fuenteTecnica;
 
     @NotNull(message = "El nivel resultante es obligatorio")

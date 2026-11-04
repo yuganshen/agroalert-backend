@@ -31,6 +31,7 @@ public class DatoMeteorologicoController {
     }
 
     @GetMapping("/parcela/{parcelaId}")
+    @PreAuthorize("@acceso.parcela(#parcelaId)")
     public ResponseEntity<ApiResponse<List<DatoMeteorologicoResponseDto>>> obtenerHistorialPorParcela(
             @PathVariable Long parcelaId) {
         List<DatoMeteorologicoResponseDto> historial = datoMeteorologicoService.obtenerHistorialPorParcela(parcelaId);
@@ -38,6 +39,7 @@ public class DatoMeteorologicoController {
     }
 
     @GetMapping("/parcela/{parcelaId}/ultimo")
+    @PreAuthorize("@acceso.parcela(#parcelaId)")
     public ResponseEntity<ApiResponse<DatoMeteorologicoResponseDto>> obtenerUltimoDatoPorParcela(
             @PathVariable Long parcelaId) {
         DatoMeteorologicoResponseDto ultimoDato = datoMeteorologicoService.obtenerUltimoDatoPorParcela(parcelaId);

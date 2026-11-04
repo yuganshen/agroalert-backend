@@ -28,6 +28,7 @@ public class ReglaDecisionService {
 
     @Transactional
     public ReglaDecisionResponseDto crearRegla(ReglaDecisionRequestDto dto) {
+        validarContrato(dto);
         Riesgo riesgo = riesgoRepository.findById(dto.getRiesgoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Riesgo no encontrado con ID: " + dto.getRiesgoId()));
 
@@ -40,7 +41,7 @@ public class ReglaDecisionService {
                 .umbral(dto.getUmbral())
                 .fuenteTecnica(dto.getFuenteTecnica())
                 .nivelResultante(dto.getNivelResultante())
-                .estado(EstadoValidacion.VALIDADO)
+                .estado(EstadoValidacion.PENDIENTE)
                 .riesgo(riesgo)
                 .etapaFenologica(etapa)
                 .build();
@@ -66,6 +67,7 @@ public class ReglaDecisionService {
 
     @Transactional
     public ReglaDecisionResponseDto actualizarRegla(Long id, ReglaDecisionRequestDto dto) {
+        validarContrato(dto);
         ReglaDecision regla = reglaDecisionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Regla de decisión no encontrada con ID: " + id));
 
@@ -75,6 +77,8 @@ public class ReglaDecisionService {
         EtapaFenologica etapa = etapaFenologicaRepository.findById(dto.getEtapaFenologicaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Etapa fenológica no encontrada con ID: " + dto.getEtapaFenologicaId()));
 
+        regla.setEstado(EstadoValidacion.PENDIENTE);
+        regla.setComentarioValidacion(null);
         regla.setVariableMeteorologica(dto.getVariableMeteorologica());
         regla.setOperador(dto.getOperador());
         regla.setUmbral(dto.getUmbral());
@@ -92,9 +96,14 @@ public class ReglaDecisionService {
         if (!reglaDecisionRepository.existsById(id)) {
             throw new ResourceNotFoundException("Regla de decisión no encontrada con ID: " + id);
         }
-        reglaDecisionRepository.deleteById(id);
+        ReglaDecision regla=reglaDecisionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Regla no encontrada"));
+        regla.setActivo(false);
+        reglaDecisionRepository.save(regla);
     }
 
+    private void validarContrato(ReglaDecisionRequestDto dto) {
+        if(dto.getFuenteTecnica()==null || dto.getFuenteTecnica().isBlank()) throw new com.agroalert.agroalertbackend.exception.ValidationException("La fuente técnica es obligatoria");
+    }
     private ReglaDecisionResponseDto mapToResponseDto(ReglaDecision regla) {
         String riesgoNombre = regla.getRiesgo() != null ? regla.getRiesgo().getNombre() : null;
         String etapaNombre = regla.getEtapaFenologica() != null ? regla.getEtapaFenologica().getNombre() : null;

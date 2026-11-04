@@ -41,6 +41,9 @@ class UsuarioServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock private com.agroalert.agroalertbackend.repository.TokenJwtRepository tokens;
+    @Mock private jakarta.persistence.EntityManager entityManager;
+
     @InjectMocks
     private UsuarioService usuarioService;
 

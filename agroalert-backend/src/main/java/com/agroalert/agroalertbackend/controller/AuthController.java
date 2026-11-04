@@ -30,11 +30,13 @@ public class AuthController {
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<ApiResponse<UsuarioResponseDto>> registrarAgricultor(@Valid @RequestBody CrearRegistroUsuarioDto dto) {
-        dto.setRol(RolNombre.AGRICULTOR);
+    public ResponseEntity<ApiResponse<UsuarioResponseDto>> registrarUsuario(@Valid @RequestBody CrearRegistroUsuarioDto dto) {
+        if (dto.getRol() == null) {
+            dto.setRol(RolNombre.AGRICULTOR);
+        }
         UsuarioResponseDto usuarioCreado = usuarioService.crearUsuario(dto);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Agricultor registrado exitosamente", usuarioCreado));
+                .body(ApiResponse.ok("Usuario registrado exitosamente", usuarioCreado));
     }
 
     @PostMapping("/logout")

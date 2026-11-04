@@ -14,6 +14,9 @@ import java.time.LocalDate;
 @Builder
 public class ParcelaResponseDto {
     private Long id;
+    private Long comunidadId;
+    private Long agricultorId;
+    private Double progresoEtapa;
     private String nombre;
     private String ubicacion;
     private Double areaHectareas;

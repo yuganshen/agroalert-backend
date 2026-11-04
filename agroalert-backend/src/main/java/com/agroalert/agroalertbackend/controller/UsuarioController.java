@@ -36,6 +36,12 @@ public class UsuarioController {
                 .body(ApiResponse.ok("Usuario creado exitosamente", usuarioCreado));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<UsuarioResponseDto>> editar(@PathVariable Long id, @Valid @RequestBody com.agroalert.agroalertbackend.dto.ActualizarUsuarioDto dto) {
+        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado",usuarioService.actualizar(id,dto)));
+    }
+
     @PatchMapping("/{id}/estado")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<UsuarioResponseDto>> cambiarEstadoUsuario(@PathVariable Long id) {

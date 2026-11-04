@@ -29,6 +29,7 @@ class EtapaFenologicaServiceTest {
     void testListarEtapas() {
         EtapaFenologica etapa = EtapaFenologica.builder()
                 .id(1L)
+                .estado(com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO)
                 .nombre("Germinación")
                 .descripcion("Fase inicial de brote")
                 .diasDesdeMin(0)

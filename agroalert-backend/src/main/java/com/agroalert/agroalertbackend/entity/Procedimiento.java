@@ -20,6 +20,11 @@ public class Procedimiento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Builder.Default
+    private Boolean activo = true;
+
+    private String comentarioValidacion;
+
     private String titulo;
 
     @Column(name = "momento_aplicacion")

@@ -13,5 +13,9 @@ public interface AlertaRepository extends JpaRepository<Alerta, Long> {
 
     List<Alerta> findByParcelaIdOrderByGeneradaEnDesc(Long parcelaId);
 
+    List<Alerta> findByParcelaAgricultorIdOrderByGeneradaEnDesc(Long id);
+
+    boolean existsByParcelaIdAndReglaDecisionIdAndEstado(Long parcelaId, Long reglaId, EstadoAlerta estado);
+
     List<Alerta> findByEstado(EstadoAlerta estado);
 }

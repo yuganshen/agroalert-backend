@@ -14,6 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 public class AuthResponse {
 
+    private Long id;
+    private String nombre;
+    private String apellido;
     private String token;
 
     @Builder.Default

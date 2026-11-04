@@ -21,6 +21,11 @@ public class ReglaDecision {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Builder.Default
+    private Boolean activo = true;
+
+    private String comentarioValidacion;
+
     @Column(name = "variable_meteorologica")
     private String variableMeteorologica;
 
