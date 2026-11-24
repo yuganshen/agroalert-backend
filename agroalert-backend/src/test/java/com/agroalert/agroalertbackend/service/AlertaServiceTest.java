@@ -50,7 +50,11 @@ class AlertaServiceTest {
     @Mock
     private ProcedimientoRepository procedimientoRepository;
 
-    @Mock private PasoProcedimientoRepository pasoProcedimientoRepository;
+    @Mock
+    private PasoProcedimientoRepository pasoProcedimientoRepository;
+
+    @Mock
+    private EmailNotificacionService emailNotificacionService;
 
     @InjectMocks
     private AlertaService alertaService;
@@ -67,11 +71,21 @@ class AlertaServiceTest {
 
     @BeforeEach
     void setUp() {
+        Agricultor agricultor = Agricultor.builder()
+                .id(20L)
+                .nombre("Juan")
+                .apellido("Pérez")
+                .email("juan.perez@example.com")
+                .dni("12345678")
+                .telefono("987654321")
+                .build();
+
         parcela = Parcela.builder()
                 .id(1L)
                 .nombre("Parcela El Valle")
                 .fechaSiembra(LocalDate.now().minusDays(30))
                 .activa(true)
+                .agricultor(agricultor)
                 .build();
 
         datoMeteorologico = DatoMeteorologico.builder()
@@ -175,6 +189,7 @@ class AlertaServiceTest {
         assertEquals("Protocolo de control de Pyricularia", resAlerta.getProcedimientoTitulo());
 
         verify(alertaRepository, times(1)).save(any(Alerta.class));
+        verify(emailNotificacionService, times(1)).enviarAlertaAgricultor(any(Alerta.class));
     }
 
     @Test
@@ -185,7 +200,8 @@ class AlertaServiceTest {
         when(etapaFenologicaRepository.findEtapaPorDias(30)).thenReturn(Optional.of(etapa));
         when(reglaDecisionRepository.findByEtapaFenologicaId(2L)).thenReturn(List.of(regla));
         assertTrue(alertaService.evaluarClimaYGenerarAlerta(1L).isEmpty());
-        verify(alertaRepository,never()).save(any());
+        verify(alertaRepository, never()).save(any());
+        verify(emailNotificacionService, never()).enviarAlertaAgricultor(any());
     }
 
     @Test
@@ -202,6 +218,7 @@ class AlertaServiceTest {
         assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
         verify(alertaRepository, never()).save(any());
+        verify(emailNotificacionService, never()).enviarAlertaAgricultor(any());
     }
 
     @Test
@@ -210,6 +227,7 @@ class AlertaServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> alertaService.evaluarClimaYGenerarAlerta(99L));
         verify(alertaRepository, never()).save(any());
+        verify(emailNotificacionService, never()).enviarAlertaAgricultor(any());
     }
 
     @Test
@@ -219,6 +237,7 @@ class AlertaServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> alertaService.evaluarClimaYGenerarAlerta(1L));
         verify(alertaRepository, never()).save(any());
+        verify(emailNotificacionService, never()).enviarAlertaAgricultor(any());
     }
 
     @Test
