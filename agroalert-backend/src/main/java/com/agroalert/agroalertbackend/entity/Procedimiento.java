@@ -6,7 +6,12 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -36,4 +41,11 @@ public class Procedimiento {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medida_id")
     private Medida medida;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "procedimiento", fetch = FetchType.LAZY)
+    @OrderBy("orden ASC")
+    @Builder.Default
+    private List<PasoProcedimiento> pasos = new ArrayList<>();
 }

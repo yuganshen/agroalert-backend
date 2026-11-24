@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @NoArgsConstructor
@@ -35,4 +37,14 @@ public class Medida {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "riesgo_id")
     private Riesgo riesgo;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToOne(mappedBy = "medida", fetch = FetchType.LAZY)
+    private Recomendacion recomendacion;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToOne(mappedBy = "medida", fetch = FetchType.LAZY)
+    private Procedimiento procedimiento;
 }

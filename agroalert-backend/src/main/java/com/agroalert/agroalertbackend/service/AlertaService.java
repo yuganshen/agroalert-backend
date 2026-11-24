@@ -31,11 +31,19 @@ public class AlertaService {
     private final RecomendacionRepository recomendacionRepository;
     private final ProcedimientoRepository procedimientoRepository;
     private final PasoProcedimientoRepository pasoProcedimientoRepository;
+    private final EmailNotificacionService emailNotificacionService;
 
     @Transactional
     public List<AlertaResponseDto> evaluarClimaYGenerarAlerta(Long parcelaId) {
         Parcela parcela = parcelaRepository.findById(parcelaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Parcela no encontrada con ID: " + parcelaId));
+
+        if (parcela.getAgricultor() != null) {
+            // Inicializar datos del agricultor dentro de la transacción para el envío asíncrono
+            parcela.getAgricultor().getEmail();
+            parcela.getAgricultor().getNombre();
+            parcela.getAgricultor().getApellido();
+        }
 
         DatoMeteorologico ultimoDato = datoMeteorologicoRepository.findTopByParcelaIdOrderByFechaHoraDesc(parcelaId)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontraron datos meteorológicos para evaluar la parcela con ID: " + parcelaId));
@@ -63,6 +71,20 @@ public class AlertaService {
                     }
                 }
 
+                if (medidaPreventiva != null) {
+                    final Medida med = medidaPreventiva;
+                    recomendacionRepository.findByMedidaId(med.getId())
+                            .filter(r -> !Boolean.FALSE.equals(r.getActivo()) && r.getEstado() == com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO)
+                            .ifPresent(med::setRecomendacion);
+
+                    procedimientoRepository.findByMedidaId(med.getId())
+                            .filter(p -> !Boolean.FALSE.equals(p.getActivo()) && p.getEstado() == com.agroalert.agroalertbackend.entity.enums.EstadoValidacion.VALIDADO)
+                            .ifPresent(p -> {
+                                p.setPasos(pasoProcedimientoRepository.findByProcedimientoIdOrderByOrdenAsc(p.getId()));
+                                med.setProcedimiento(p);
+                            });
+                }
+
                 String condicionDetectada = String.format("%s (%.2f) %s %.2f",
                         regla.getVariableMeteorologica(),
                         valorActual,
@@ -82,7 +104,11 @@ public class AlertaService {
                         .condicionDetectada(condicionDetectada)
                         .build();
 
-                alertasGeneradas.add(alertaRepository.save(nuevaAlerta));
+                Alerta alertaGuardada = alertaRepository.save(nuevaAlerta);
+                alertaGuardada.setParcela(parcela);
+                alertaGuardada.setMedida(medidaPreventiva);
+                emailNotificacionService.enviarAlertaAgricultor(alertaGuardada);
+                alertasGeneradas.add(alertaGuardada);
             }
         }
 
