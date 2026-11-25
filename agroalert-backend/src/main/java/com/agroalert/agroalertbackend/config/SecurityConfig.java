@@ -51,6 +51,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // CSRF deshabilitado para permitir el registro automático del cliente SBA (/instances, /instances/**) y endpoints REST
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -58,6 +59,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/comunidades", "/api/comunidades/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/etapas-fenologicas", "/api/etapas-fenologicas/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // Spring Boot Admin Server, Client y recursos estáticos
+                        .requestMatchers(
+                                "/", "/index.html", "/favicon.ico",
+                                "/applications", "/applications/**",
+                                "/instances", "/instances/**",
+                                "/assets/**",
+                                "/variables.css",
+                                "/sba-settings.js",
+                                "/wallboard",
+                                "/journal",
+                                "/about",
+                                "/notifications/**",
+                                "/actuator/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
