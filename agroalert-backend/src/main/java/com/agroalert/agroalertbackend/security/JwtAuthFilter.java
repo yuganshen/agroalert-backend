@@ -26,6 +26,31 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final TokenJwtRepository tokenJwtRepository;
 
     @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        if (path == null || path.isEmpty()) {
+            path = request.getRequestURI();
+        }
+        if (path == null) {
+            return false;
+        }
+
+        return path.startsWith("/applications")
+                || path.startsWith("/instances")
+                || path.startsWith("/assets")
+                || path.startsWith("/variables.css")
+                || path.startsWith("/sba-settings.js")
+                || path.startsWith("/actuator")
+                || path.startsWith("/wallboard")
+                || path.startsWith("/journal")
+                || path.startsWith("/about")
+                || path.startsWith("/notifications")
+                || path.equals("/")
+                || path.equals("/index.html")
+                || path.equals("/favicon.ico");
+    }
+
+    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
@@ -51,9 +76,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails;
-            try { userDetails = this.userDetailsService.loadUserByUsername(userEmail); }
-            catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
-                filterChain.doFilter(request, response); return;
+            try {
+                userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            } catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
+                filterChain.doFilter(request, response);
+                return;
             }
 
             boolean isTokenNotRevoked = tokenJwtRepository.findByToken(jwt)
